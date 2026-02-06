@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Rotahub Courier",
+    "slug": "rotahub-courier",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "platforms": ["ios", "android", "web"],
+    "sdkVersion": "51.0.0"
+  }
+}

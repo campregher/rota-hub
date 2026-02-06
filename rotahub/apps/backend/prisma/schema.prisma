@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SELLER
+  COURIER
+  ADMIN
+}
+
+enum Marketplace {
+  MERCADOLIVRE
+  SHOPEE
+  OTHER
+}
+
+enum OrderStatus {
+  NEW
+  SYNCED
+  CANCELLED
+}
+
+enum JobStatus {
+  OPEN
+  ASSIGNED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+  DISPUTE
+}
+
+enum TrackingEventType {
+  STATUS_CHANGE
+  LOCATION_PING
+  NOTE
+}
+
+enum PayoutStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model User {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  seller       SellerProfile?
+  courier      CourierProfile?
+  connections  MarketplaceConnection[]
+  orders       Order[]
+  jobs         DeliveryJob[]   @relation("SellerJobs")
+  payouts      Payout[]        @relation("CourierPayouts")
+}
+
+model SellerProfile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  companyName String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model CourierProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  fullName  String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id])
+  payouts   Payout[] @relation("CourierPayouts")
+}
+
+model Address {
+  id         String   @id @default(uuid())
+  label      String
+  line1      String
+  line2      String?
+  city       String
+  state      String
+  postalCode String
+  country    String
+  lat        Float?
+  lng        Float?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  pickupFor  Order[]  @relation("PickupAddress")
+  dropoffFor Order[]  @relation("DropoffAddress")
+}
+
+model MarketplaceConnection {
+  id           String      @id @default(uuid())
+  sellerId     String
+  marketplace  Marketplace
+  accessToken  String
+  refreshToken String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  seller       User        @relation(fields: [sellerId], references: [id])
+
+  @@unique([sellerId, marketplace])
+}
+
+model Order {
+  id                  String      @id @default(uuid())
+  sellerId            String
+  marketplace         Marketplace
+  marketplaceOrderId  String
+  status              OrderStatus @default(NEW)
+  pickupAddressId     String
+  dropoffAddressId    String
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  seller              User        @relation(fields: [sellerId], references: [id])
+  pickupAddress       Address     @relation("PickupAddress", fields: [pickupAddressId], references: [id])
+  dropoffAddress      Address     @relation("DropoffAddress", fields: [dropoffAddressId], references: [id])
+  job                 DeliveryJob?
+
+  @@unique([marketplace, marketplaceOrderId])
+}
+
+model DeliveryJob {
+  id          String       @id @default(uuid())
+  orderId     String       @unique
+  sellerId    String
+  status      JobStatus    @default(OPEN)
+  expiresAt   DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  order       Order        @relation(fields: [orderId], references: [id])
+  seller      User         @relation("SellerJobs", fields: [sellerId], references: [id])
+  assignment  JobAssignment?
+  tracking    TrackingEvent[]
+  pod         ProofOfDelivery?
+
+  @@index([status, expiresAt])
+}
+
+model JobAssignment {
+  id         String      @id @default(uuid())
+  jobId      String      @unique
+  courierId  String
+  assignedAt DateTime    @default(now())
+  job        DeliveryJob @relation(fields: [jobId], references: [id])
+  courier    User        @relation(fields: [courierId], references: [id])
+}
+
+model TrackingEvent {
+  id        String            @id @default(uuid())
+  jobId     String
+  type      TrackingEventType
+  status    JobStatus
+  metadata  Json?
+  createdAt DateTime          @default(now())
+  job       DeliveryJob       @relation(fields: [jobId], references: [id])
+}
+
+model ProofOfDelivery {
+  id           String   @id @default(uuid())
+  jobId        String   @unique
+  receiverName String
+  deliveredAt  DateTime @default(now())
+  photoUrl     String?
+  lat          Float?
+  lng          Float?
+  createdAt    DateTime @default(now())
+  job          DeliveryJob @relation(fields: [jobId], references: [id])
+}
+
+model Payout {
+  id          String       @id @default(uuid())
+  courierId   String
+  amount      Float
+  status      PayoutStatus @default(PENDING)
+  periodStart DateTime
+  periodEnd   DateTime
+  createdAt   DateTime     @default(now())
+  courier     User         @relation("CourierPayouts", fields: [courierId], references: [id])
+}
