@@ -1,0 +1,17 @@
+{
+  "name": "rotahub",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:backend": "npm --workspace apps/backend run start:dev",
+    "dev:seller-web": "npm --workspace apps/seller-web run dev",
+    "dev:courier-app": "npm --workspace apps/courier-app run start"
+  },
+  "devDependencies": {
+    "supabase": "^2.75.5"
+  }
+}

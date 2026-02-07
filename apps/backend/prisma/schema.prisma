@@ -1,0 +1,288 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SELLER
+  COURIER
+  ADMIN
+
+  @@map("user_role")
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+  PENDING
+
+  @@map("user_status")
+}
+
+enum Marketplace {
+  MERCADO_LIVRE
+  SHOPEE
+
+  @@map("marketplace")
+}
+
+enum ConnectionStatus {
+  PENDING
+  CONNECTED
+  DISCONNECTED
+  ERROR
+
+  @@map("connection_status")
+}
+
+enum OrderStatusNormalized {
+  NEW
+  READY_TO_SHIP
+  IN_DELIVERY
+  DELIVERED
+  CANCELLED
+
+  @@map("order_status_normalized")
+}
+
+enum VehicleType {
+  BIKE
+  MOTORBIKE
+  CAR
+  VAN
+
+  @@map("vehicle_type")
+}
+
+enum DocStatus {
+  PENDING
+  APPROVED
+  REJECTED
+
+  @@map("doc_status")
+}
+
+enum JobStatus {
+  OPEN
+  ASSIGNED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+  DISPUTE
+
+  @@map("job_status")
+}
+
+enum TrackingEventType {
+  JOB_CREATED
+  JOB_ACCEPTED
+  STATUS_CHANGED
+  POD_UPLOADED
+  JOB_CANCELLED
+  JOB_DISPUTE
+
+  @@map("tracking_event_type")
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+
+  @@map("payout_status")
+}
+
+model User {
+  id                     String                  @id @default(uuid()) @db.Uuid
+  email                  String                  @unique
+  passwordHash           String                  @map("password_hash")
+  role                   UserRole
+  status                 UserStatus              @default(ACTIVE)
+  fullName               String                  @map("full_name")
+  refreshTokenHash       String?                 @map("refresh_token_hash")
+  createdAt              DateTime                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime                @updatedAt @map("updated_at") @db.Timestamptz(6)
+  sellerProfile          SellerProfile?
+  courierProfile         CourierProfile?
+  sellerOrders           Order[]                 @relation("SellerOrders")
+  sellerJobs             DeliveryJob[]           @relation("SellerJobs")
+  assignedCourierJobs    DeliveryJob[]           @relation("AssignedCourierJobs")
+  courierAssignments     JobAssignment[]         @relation("CourierAssignments")
+  actorTrackingEvents    TrackingEvent[]         @relation("TrackingActor")
+  courierPayouts         Payout[]                @relation("CourierPayouts")
+  marketplaceConnections MarketplaceConnection[] @relation("SellerConnections")
+
+  @@map("users")
+}
+
+model SellerProfile {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  storeName String?  @map("store_name")
+  document  String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("seller_profiles")
+}
+
+model CourierProfile {
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String      @unique @map("user_id") @db.Uuid
+  vehicleType VehicleType @default(MOTORBIKE) @map("vehicle_type")
+  docStatus   DocStatus   @default(PENDING) @map("doc_status")
+  rating      Decimal     @default(5.00) @db.Decimal(3, 2)
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("courier_profiles")
+}
+
+model Address {
+  id          String        @id @default(uuid()) @db.Uuid
+  label       String?
+  street      String
+  number      String?
+  district    String?
+  city        String
+  state       String
+  postalCode  String?       @map("postal_code")
+  country     String        @default("BR")
+  lat         Decimal?      @db.Decimal(10, 7)
+  lng         Decimal?      @db.Decimal(10, 7)
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  pickupJobs  DeliveryJob[] @relation("PickupAddress")
+  dropoffJobs DeliveryJob[] @relation("DropoffAddress")
+
+  @@map("addresses")
+}
+
+model MarketplaceConnection {
+  id                    String           @id @default(uuid()) @db.Uuid
+  sellerId              String           @map("seller_id") @db.Uuid
+  marketplace           Marketplace
+  status                ConnectionStatus @default(PENDING)
+  externalSellerId      String?          @map("external_seller_id")
+  accessTokenEncrypted  String?          @map("access_token_encrypted")
+  refreshTokenEncrypted String?          @map("refresh_token_encrypted")
+  tokenExpiresAt        DateTime?        @map("token_expires_at") @db.Timestamptz(6)
+  createdAt             DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  seller                User             @relation("SellerConnections", fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@unique([sellerId, marketplace])
+  @@map("marketplace_connections")
+}
+
+model Order {
+  id                 String                @id @default(uuid()) @db.Uuid
+  sellerId           String                @map("seller_id") @db.Uuid
+  marketplace        Marketplace
+  marketplaceOrderId String                @map("marketplace_order_id")
+  status             OrderStatusNormalized @default(NEW)
+  totalCents         Int?                  @map("total_cents")
+  rawPayload         Json?                 @map("raw_payload")
+  createdAt          DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  seller             User                  @relation("SellerOrders", fields: [sellerId], references: [id], onDelete: Cascade)
+  jobs               DeliveryJob[]
+
+  @@unique([marketplace, marketplaceOrderId])
+  @@map("orders")
+}
+
+model DeliveryJob {
+  id                String          @id @default(uuid()) @db.Uuid
+  sellerId          String          @map("seller_id") @db.Uuid
+  orderId           String?         @map("order_id") @db.Uuid
+  pickupAddressId   String          @map("pickup_address_id") @db.Uuid
+  dropoffAddressId  String          @map("dropoff_address_id") @db.Uuid
+  status            JobStatus       @default(OPEN)
+  expiresAt         DateTime?       @map("expires_at") @db.Timestamptz(6)
+  priceCents        Int?            @map("price_cents")
+  notes             String?
+  assignedCourierId String?         @map("assigned_courier_id") @db.Uuid
+  assignedAt        DateTime?       @map("assigned_at") @db.Timestamptz(6)
+  pickedUpAt        DateTime?       @map("picked_up_at") @db.Timestamptz(6)
+  deliveredAt       DateTime?       @map("delivered_at") @db.Timestamptz(6)
+  cancelledAt       DateTime?       @map("cancelled_at") @db.Timestamptz(6)
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+  seller            User            @relation("SellerJobs", fields: [sellerId], references: [id], onDelete: Cascade)
+  order             Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  pickupAddress     Address         @relation("PickupAddress", fields: [pickupAddressId], references: [id])
+  dropoffAddress    Address         @relation("DropoffAddress", fields: [dropoffAddressId], references: [id])
+  assignedCourier   User?           @relation("AssignedCourierJobs", fields: [assignedCourierId], references: [id], onDelete: SetNull)
+  assignment        JobAssignment?
+  trackingEvents    TrackingEvent[]
+  proofOfDelivery   ProofOfDelivery?
+  payouts           Payout[]
+
+  @@map("delivery_jobs")
+}
+
+model JobAssignment {
+  id         String      @id @default(uuid()) @db.Uuid
+  jobId      String      @unique @map("job_id") @db.Uuid
+  courierId  String      @map("courier_id") @db.Uuid
+  acceptedAt DateTime    @default(now()) @map("accepted_at") @db.Timestamptz(6)
+  createdAt  DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  job        DeliveryJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  courier    User        @relation("CourierAssignments", fields: [courierId], references: [id], onDelete: Cascade)
+
+  @@map("job_assignments")
+}
+
+model TrackingEvent {
+  id         String            @id @default(uuid()) @db.Uuid
+  jobId      String            @map("job_id") @db.Uuid
+  eventType  TrackingEventType @map("event_type")
+  fromStatus JobStatus?        @map("from_status")
+  toStatus   JobStatus?        @map("to_status")
+  actorUserId String?          @map("actor_user_id") @db.Uuid
+  payload    Json?
+  createdAt  DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  job        DeliveryJob       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  actorUser  User?             @relation("TrackingActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@map("tracking_events")
+}
+
+model ProofOfDelivery {
+  id           String      @id @default(uuid()) @db.Uuid
+  jobId        String      @unique @map("job_id") @db.Uuid
+  photoUrl     String?     @map("photo_url")
+  receiverName String      @map("receiver_name")
+  lat          Decimal?    @db.Decimal(10, 7)
+  lng          Decimal?    @db.Decimal(10, 7)
+  deliveredAt  DateTime    @default(now()) @map("delivered_at") @db.Timestamptz(6)
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  job          DeliveryJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@map("proof_of_delivery")
+}
+
+model Payout {
+  id          String       @id @default(uuid()) @db.Uuid
+  courierId   String       @map("courier_id") @db.Uuid
+  jobId       String?      @map("job_id") @db.Uuid
+  amountCents Int          @map("amount_cents")
+  status      PayoutStatus @default(PENDING)
+  paidAt      DateTime?    @map("paid_at") @db.Timestamptz(6)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+  courier     User         @relation("CourierPayouts", fields: [courierId], references: [id], onDelete: Cascade)
+  job         DeliveryJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@map("payouts")
+}

@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "RotaHub Courier",
+    "slug": "rotahub-courier",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {},
+    "extra": {
+      "apiUrl": "http://localhost:3000"
+    }
+  }
+}

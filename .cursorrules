@@ -1,0 +1,25 @@
+# RotaHub Cursor Rules
+
+## Code and Architecture
+- Keep backend business logic in services, controllers should stay thin.
+- Enforce DTO validation for every write endpoint.
+- Maintain explicit job status transition validation.
+- Keep SQL migrations in `supabase/migrations` as database source of truth.
+- Keep Prisma schema synchronized with SQL migrations.
+
+## Security
+- Never log auth tokens, marketplace tokens, or service role keys.
+- Store marketplace tokens encrypted (AES-256-GCM) before persisting.
+- Do not expose `SUPABASE_SERVICE_ROLE_KEY` in frontend bundles.
+- Validate file upload size/type for POD endpoints.
+
+## Data Integrity
+- Preserve unique constraints, especially `job_assignments.job_id`.
+- Keep `POST /jobs/:id/accept` atomic via transaction.
+- Return HTTP 409 on assignment conflict.
+- Require POD before DELIVERED when `POD_REQUIRED=true`.
+
+## Documentation
+- Update `docs/API.md` when adding/changing endpoints.
+- Update `docs/ARCHITECTURE.md` for module/data model changes.
+- Update `docs/SECURITY_LGPD.md` for security-impacting changes.
