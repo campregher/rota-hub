@@ -14,6 +14,11 @@
 - `JWT_ACCESS_SECRET` e `JWT_REFRESH_SECRET`
 - `MARKETPLACE_TOKEN_ENCRYPTION_KEY`
 
+Notas de `DATABASE_URL`:
+- Local: pode usar host direto `db.<project_ref>.supabase.co:5432`.
+- Cloud/Render: prefira pooler `aws-0-<region>.pooler.supabase.com:6543` com usuario `postgres.<project_ref>`.
+- Salvar sem aspas e sem incluir `DATABASE_URL=` dentro do valor.
+
 ## 2) Conectar no projeto Supabase
 ```bash
 npm install --save-dev supabase
@@ -24,13 +29,11 @@ npx supabase link --project-ref <PROJECT_REF>
 ## 3) Aplicar schema e seed
 ```bash
 npx supabase db push
-npx supabase db query < supabase/seed.sql
 ```
 
-PowerShell:
-```powershell
-Get-Content supabase/seed.sql -Raw | npx supabase db query
-```
+Seed:
+- Se sua versao da CLI nao tiver `supabase db query`, execute `supabase/seed.sql` no SQL Editor do dashboard.
+- Se tiver `db query`, rode via terminal.
 
 ## 4) Criar bucket para POD
 No dashboard do Supabase Storage:
@@ -82,6 +85,8 @@ npm run start
 
 ## Troubleshooting
 - `P1001/P1000 Prisma`: revisar `DATABASE_URL`, host e SSL.
+- `Tenant or user not found`: em pooler, usar usuario `postgres.<project_ref>`.
+- `URL must start with protocol`: remover aspas/prefixo indevido e garantir `postgresql://`.
 - `The table ... does not exist`: schema nao aplicado no projeto correto.
 - `Failed to upload POD photo`: conferir `SUPABASE_SERVICE_ROLE_KEY` e bucket.
 - `409 on accept`: comportamento esperado em corrida de aceite.

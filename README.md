@@ -27,6 +27,14 @@ No dashboard do Supabase, crie um projeto e copie:
 
 Copie `.env.example` para `.env` na raiz e preencha os valores.
 
+Para deploy em cloud (Render/Railway), prefira `DATABASE_URL` do pooler do Supabase:
+
+```env
+postgresql://postgres.<PROJECT_REF>:<PASSWORD>@aws-0-<REGION>.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1&sslmode=require
+```
+
+Importante: salvar sem aspas e sem prefixo `DATABASE_URL=` dentro do valor.
+
 ## 3) CLI do Supabase (sem Docker)
 
 ```bash
@@ -42,16 +50,8 @@ npx supabase db push
 ```
 
 Seed:
-
-```bash
-npx supabase db query < supabase/seed.sql
-```
-
-PowerShell:
-
-```powershell
-Get-Content supabase/seed.sql -Raw | npx supabase db query
-```
+- Para CLI recentes sem `db query`, execute `supabase/seed.sql` via SQL Editor no dashboard do Supabase.
+- Se sua CLI suportar `db query`, rode pelo terminal.
 
 ## 5) Criar bucket para POD
 
