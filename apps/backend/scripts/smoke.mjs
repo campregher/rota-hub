@@ -64,6 +64,9 @@ async function main() {
   form.append("receiverName", "Smoke Receiver");
   await request(`/jobs/${job.id}/pod`, {
     method: "POST",
+    headers: {
+      Authorization: `Bearer ${courierToken}`
+    },
     body: form
   });
   console.log(`Uploaded POD for ${job.id}`);

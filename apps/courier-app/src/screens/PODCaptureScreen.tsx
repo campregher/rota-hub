@@ -1,14 +1,15 @@
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
 import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { uploadPod } from "../api/client";
+import { isAuthExpiredError, uploadPod } from "../api/client";
 
 type Props = {
   jobId: string;
   onBack: () => void;
+  onLogout: () => void;
 };
 
-export function PODCaptureScreen({ jobId, onBack }: Props) {
+export function PODCaptureScreen({ jobId, onBack, onLogout }: Props) {
   const [receiverName, setReceiverName] = useState("");
   const [photoUri, setPhotoUri] = useState<string | undefined>(undefined);
   const [result, setResult] = useState("");
@@ -29,9 +30,26 @@ export function PODCaptureScreen({ jobId, onBack }: Props) {
     }
   }
 
+  async function takePhoto() {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      setResult("Permission denied for camera");
+      return;
+    }
+
+    const captured = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images as any,
+      quality: 0.8
+    });
+
+    if (!captured.canceled && captured.assets[0]) {
+      setPhotoUri(captured.assets[0].uri);
+    }
+  }
+
   async function submit() {
     if (!receiverName.trim()) {
-      setResult("receiverName é obrigatório.");
+      setResult("receiverName e obrigatorio.");
       return;
     }
     setLoading(true);
@@ -43,6 +61,10 @@ export function PODCaptureScreen({ jobId, onBack }: Props) {
       });
       setResult(JSON.stringify(data));
     } catch (err) {
+      if (isAuthExpiredError(err)) {
+        onLogout();
+        return;
+      }
       setResult(String(err));
     } finally {
       setLoading(false);
@@ -64,6 +86,9 @@ export function PODCaptureScreen({ jobId, onBack }: Props) {
         <Pressable onPress={pickImage} style={styles.secondaryButton}>
           <Text style={styles.bodyText}>Select Photo</Text>
         </Pressable>
+        <Pressable onPress={takePhoto} style={styles.secondaryButton}>
+          <Text style={styles.bodyText}>Take Photo</Text>
+        </Pressable>
         <Pressable
           onPress={submit}
           disabled={loading || !receiverName.trim()}
@@ -76,7 +101,7 @@ export function PODCaptureScreen({ jobId, onBack }: Props) {
       {photoUri ? (
         <Image source={{ uri: photoUri }} style={styles.preview} />
       ) : (
-        <Text style={styles.bodyText}>TODO: camera capture can be added later.</Text>
+        <Text style={styles.bodyText}>No photo selected yet.</Text>
       )}
 
       {result ? <Text style={styles.bodyText}>{result}</Text> : null}

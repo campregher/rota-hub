@@ -7,13 +7,14 @@ import {
   Text,
   View
 } from "react-native";
-import { API_URL, getCourierFeed, Job } from "../api/client";
+import { API_URL, getCourierFeed, isAuthExpiredError, Job } from "../api/client";
 
 type Props = {
+  onLogout: () => void;
   onSelectJob: (job: Job) => void;
 };
 
-export function FeedScreen({ onSelectJob }: Props) {
+export function FeedScreen({ onLogout, onSelectJob }: Props) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
@@ -25,6 +26,10 @@ export function FeedScreen({ onSelectJob }: Props) {
       const data = await getCourierFeed();
       setJobs(data);
     } catch (err) {
+      if (isAuthExpiredError(err)) {
+        onLogout();
+        return;
+      }
       setError(String(err));
     } finally {
       setLoading(false);
@@ -59,7 +64,12 @@ export function FeedScreen({ onSelectJob }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Feed</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Feed</Text>
+        <Pressable onPress={onLogout} style={styles.secondaryButton}>
+          <Text style={styles.secondaryText}>Logout</Text>
+        </Pressable>
+      </View>
       <FlatList
         data={jobs}
         keyExtractor={(item) => item.id}
@@ -69,10 +79,7 @@ export function FeedScreen({ onSelectJob }: Props) {
           </Text>
         }
         renderItem={({ item }) => (
-          <Pressable
-            onPress={() => onSelectJob(item)}
-            style={styles.card}
-          >
+          <Pressable onPress={() => onSelectJob(item)} style={styles.card}>
             <Text style={styles.cardTitle}>{item.id}</Text>
             <Text style={styles.bodyText}>Status: {item.status}</Text>
           </Pressable>
@@ -94,12 +101,27 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     color: "#0f172a"
   },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center"
+  },
   bodyText: {
     color: "#334155",
     marginTop: 8
   },
   errorText: {
     color: "#b91c1c"
+  },
+  secondaryButton: {
+    backgroundColor: "#e2e8f0",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8
+  },
+  secondaryText: {
+    color: "#1e293b",
+    fontWeight: "600"
   },
   card: {
     borderWidth: 1,

@@ -23,6 +23,17 @@ main {
   padding: 24px;
 }
 
+h1 {
+  margin-bottom: 12px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
 a {
   color: var(--accent);
   text-decoration: none;
@@ -33,4 +44,71 @@ a {
   border-radius: 12px;
   padding: 16px;
   box-shadow: 0 8px 24px rgba(20, 33, 61, 0.08);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: #b91c1c;
+  margin-top: 12px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field input {
+  border: 1px solid #d5dbe6;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 14px;
+}
+
+.button {
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.button-secondary {
+  background: #334155;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.list {
+  padding-left: 18px;
+  margin: 0;
+}
+
+pre {
+  margin-top: 16px;
+  overflow-x: auto;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
 }

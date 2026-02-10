@@ -18,10 +18,13 @@ Use `Authorization: Bearer <accessToken>` nos endpoints:
 - `POST /jobs`
 - `POST /jobs/:id/accept`
 - `POST /jobs/:id/status`
+- `POST /jobs/:id/pod`
 - `POST /orders/sync`
 - `GET /orders`
+- `GET /courier/feed`
 - `POST /integrations/mercadolivre/connect`
 - `POST /integrations/shopee/connect`
+- `GET /payouts`
 
 ## Jobs
 - `POST /jobs`
@@ -57,6 +60,9 @@ Use `Authorization: Bearer <accessToken>` nos endpoints:
 - `GET /integrations/mercadolivre/callback?code=&state=`
   - callback stub que persiste tokens criptografados no DB
 - `POST /integrations/shopee/connect`
+  - gera URL placeholder
+- `GET /integrations/shopee/callback?code=&state=`
+  - callback stub que persiste tokens criptografados no DB
 
 ## Payouts (Stub)
 - `GET /payouts?courierUserId?`

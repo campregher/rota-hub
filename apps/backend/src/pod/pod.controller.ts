@@ -5,14 +5,21 @@ import {
   ParseUUIDPipe,
   Post,
   UploadedFile,
+  UseGuards,
   UseInterceptors
 } from "@nestjs/common";
-import { ApiConsumes, ApiTags } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiConsumes, ApiTags } from "@nestjs/swagger";
+import { Roles } from "../auth/decorators/roles.decorator";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { RolesGuard } from "../auth/guards/roles.guard";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { CreatePodDto } from "./dto/create-pod.dto";
 import { PodService } from "./pod.service";
 
 @ApiTags("POD")
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles("COURIER", "ADMIN")
 @Controller("jobs/:id/pod")
 export class PodController {
   constructor(private readonly podService: PodService) {}

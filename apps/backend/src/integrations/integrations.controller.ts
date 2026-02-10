@@ -35,4 +35,9 @@ export class IntegrationsController {
   connectShopee(@CurrentUser() user: JwtUser) {
     return this.integrationsService.connectShopee(user.sub);
   }
+
+  @Get("shopee/callback")
+  shopeeCallback(@Query("code") code?: string, @Query("state") state?: string) {
+    return this.integrationsService.shopeeCallback(code, state);
+  }
 }

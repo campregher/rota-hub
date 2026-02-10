@@ -73,10 +73,13 @@ Swagger: `http://localhost:3000/docs`
 - `POST /jobs`
 - `POST /jobs/:id/accept`
 - `POST /jobs/:id/status`
+- `POST /jobs/:id/pod`
 - `POST /orders/sync`
 - `GET /orders`
+- `GET /courier/feed`
 - `POST /integrations/mercadolivre/connect`
 - `POST /integrations/shopee/connect`
+- `GET /payouts`
 
 Use `POST /auth/login` e informe o access token no botao **Authorize** do Swagger.
 

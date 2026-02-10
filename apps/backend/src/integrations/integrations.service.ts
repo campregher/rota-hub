@@ -27,8 +27,20 @@ export class IntegrationsService {
       }
     });
 
+    const clientId = this.configService.get<string>("ML_CLIENT_ID", "ml_client_id_placeholder");
+    const redirectUri = this.configService.get<string>(
+      "ML_REDIRECT_URI",
+      "http://localhost:3000/integrations/mercadolivre/callback"
+    );
+    const params = new URLSearchParams({
+      response_type: "code",
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      state: sellerUserId
+    });
+
     return {
-      url: `https://auth.mercadolivre.com.br/authorization?client_id=TODO&state=${sellerUserId}`,
+      url: `https://auth.mercadolivre.com.br/authorization?${params.toString()}`,
       message: "Placeholder OAuth URL for Mercado Livre"
     };
   }
@@ -85,9 +97,59 @@ export class IntegrationsService {
       }
     });
 
+    const partnerId = this.configService.get<string>(
+      "SHOPEE_CLIENT_ID",
+      "shopee_client_id_placeholder"
+    );
+    const redirectUri = this.configService.get<string>(
+      "SHOPEE_REDIRECT_URI",
+      "http://localhost:3000/integrations/shopee/callback"
+    );
+    const params = new URLSearchParams({
+      partner_id: partnerId,
+      redirect: redirectUri,
+      state: sellerUserId
+    });
+
     return {
-      url: `https://partner.shopee.com/auth?partner_id=TODO&state=${sellerUserId}`,
+      url: `https://partner.shopee.com/auth?${params.toString()}`,
       message: "Placeholder OAuth URL for Shopee"
+    };
+  }
+
+  async shopeeCallback(code?: string, state?: string) {
+    if (state) {
+      const accessToken = `shopee_access_${code ?? "stub"}`;
+      const refreshToken = `shopee_refresh_${code ?? "stub"}`;
+
+      await this.prisma.marketplaceConnection.upsert({
+        where: {
+          sellerId_marketplace: {
+            sellerId: state,
+            marketplace: Marketplace.SHOPEE
+          }
+        },
+        update: {
+          status: ConnectionStatus.CONNECTED,
+          accessTokenEncrypted: this.encryptToken(accessToken),
+          refreshTokenEncrypted: this.encryptToken(refreshToken),
+          tokenExpiresAt: new Date(Date.now() + 6 * 60 * 60 * 1000)
+        },
+        create: {
+          sellerId: state,
+          marketplace: Marketplace.SHOPEE,
+          status: ConnectionStatus.CONNECTED,
+          accessTokenEncrypted: this.encryptToken(accessToken),
+          refreshTokenEncrypted: this.encryptToken(refreshToken),
+          tokenExpiresAt: new Date(Date.now() + 6 * 60 * 60 * 1000)
+        }
+      });
+    }
+
+    return {
+      message: "Shopee callback placeholder",
+      code: code ?? null,
+      state: state ?? null
     };
   }
 
