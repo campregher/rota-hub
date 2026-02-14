@@ -1,0 +1,6 @@
+- Nunca logar tokens, senhas ou dados pessoais sensíveis.
+- Tokens de marketplace devem ser armazenados criptografados (placeholder: TODO encrypt).
+- Validar transições de status de job conforme fluxo definido.
+- Aceitar job deve ser atômico e usar transação + constraint UNIQUE.
+- Para DELIVERED, exigir POD quando POD_REQUIRED=true.
+- Documentar mudanças de API no docs/API.md.
